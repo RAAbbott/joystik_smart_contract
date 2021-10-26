@@ -18,31 +18,28 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFT is ERC721Enumerable, Ownable {
+contract Joystik is ERC721Enumerable, Ownable {
   using Strings for uint256;
 
   string public baseURI;
   string public baseExtension = ".json";
-  uint256 public cost = 0.05 ether;
+  uint256 public cost = 0.08 ether;
   uint256 public maxSupply = 10000;
-  uint256 public maxMintAmount = 20;
-  uint256 public nftPerAddressLimit = 3;
-  bool public paused = false;
-  bool public revealed = false;
-  string public notRevealedUri;
-  mapping(address => bool) public whitelisted;
-  bool public onlyWhitelisted = true;
-  address[] public whitelistedUsers;
+  uint256 public reserved = 110;
+  uint256 public baseMaxMintAmount = 2;
+  uint256 public tier2MaxMint = 6;
+  uint256 public tier3MaxMint = 8;
+  uint256 public nftPerAddressLimit = 8;
+  bool public saleActive = false;
+  bool public presale = true;
+  mapping(address => uint256) public whitelisted;
 
   constructor(
     string memory _name,
     string memory _symbol,
-    string memory _initBaseURI,
-    string memory _initNotRevealedUri
+    string memory _initBaseURI
   ) ERC721(_name, _symbol) {
     setBaseURI(_initBaseURI);
-    setNotRevealedURI(_initNotRevealedUri);
-    // mint(msg.sender, 20);
   }
 
   // internal
@@ -52,18 +49,20 @@ contract NFT is ERC721Enumerable, Ownable {
 
   // public
   function mint(uint256 _mintAmount) public payable {
-    require(!paused);
+    require(saleActive, "Sale is not active!");
     uint256 supply = totalSupply();
-    require(_mintAmount > 0);
-    require(_mintAmount <= maxMintAmount);
-    require(supply + _mintAmount <= maxSupply);
 
     if (msg.sender != owner()) {
-        if (onlyWhitelisted == true) {
+        require(_mintAmount > 0, "Quantity must be greater than 0");
+        require(supply + _mintAmount <= maxSupply - reserved, "No NFTs available to mint, SOLD OUT");
+        
+        if (presale == true) {
+            uint256 maxMintForUser = whitelisted[msg.sender];
+            require(_mintAmount <= maxMintForUser, "Quantity is greater than the max mint");
             require(isWhitelisted(msg.sender), "User is not whitelisted!");
         }
-        require(msg.value >= cost * _mintAmount);
-
+        
+        require(msg.value >= cost * _mintAmount, "Insufficient funds");
     }
 
     for (uint256 i = 1; i <= _mintAmount; i++) {
@@ -71,14 +70,8 @@ contract NFT is ERC721Enumerable, Ownable {
     }
   }
   
-  
   function isWhitelisted(address _user) public view returns (bool) {
-      for (uint256 i = 0; i < whitelistedUsers.length; i++) {
-          if (whitelistedUsers[i] == _user) {
-              return true;
-          }
-      }
-      return false;
+      return whitelisted[_user] > 0;
   }
   
 
@@ -106,10 +99,6 @@ contract NFT is ERC721Enumerable, Ownable {
       _exists(tokenId),
       "ERC721Metadata: URI query for nonexistent token"
     );
-    
-    if(revealed == false) {
-        return notRevealedUri;
-    }
 
     string memory currentBaseURI = _baseURI();
     return bytes(currentBaseURI).length > 0
@@ -118,9 +107,6 @@ contract NFT is ERC721Enumerable, Ownable {
   }
 
   //only owner
-  function reveal() public onlyOwner() {
-      revealed = true;
-  }
   
   function setNftPerAddressLimit(uint256 _limit) public onlyOwner() {
       nftPerAddressLimit = _limit;
@@ -130,12 +116,8 @@ contract NFT is ERC721Enumerable, Ownable {
     cost = _newCost;
   }
 
-  function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner() {
-    maxMintAmount = _newmaxMintAmount;
-  }
-  
-  function setNotRevealedURI(string memory _notRevealedURI) public onlyOwner {
-    notRevealedUri = _notRevealedURI;
+  function setBaseMaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner() {
+    baseMaxMintAmount = _newmaxMintAmount;
   }
 
   function setBaseURI(string memory _newBaseURI) public onlyOwner {
@@ -146,13 +128,18 @@ contract NFT is ERC721Enumerable, Ownable {
     baseExtension = _newBaseExtension;
   }
 
-  function pause(bool _state) public onlyOwner {
-    paused = _state;
+  function setSaleActive(bool _state) public onlyOwner {
+    saleActive = _state;
   }
  
- function whitelistUsers(address[] calldata _users) public onlyOwner {
-    delete whitelistedUsers;
-    whitelistedUsers = _users;
+ function addTieredWhitelistUsers(address[] calldata _users, uint256 _tier) public onlyOwner {
+    require(_tier > 0 && _tier < 4, 'Tier must be between 1 and 3 (inclusive)');
+    uint256 i;
+    for (i = 0; i < _users.length; i++) {
+        if (whitelisted[_users[i]] < 1) {
+            whitelisted[_users[i]] = _tier == 2 ? tier2MaxMint : _tier == 3 ? tier3MaxMint : baseMaxMintAmount;            
+        }
+    }
   }
 
   function withdraw() public payable onlyOwner {
