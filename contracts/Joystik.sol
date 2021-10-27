@@ -74,7 +74,6 @@ contract Joystik is ERC721Enumerable, Ownable {
       return whitelisted[_user] > 0;
   }
   
-
   function walletOfOwner(address _owner)
     public
     view
@@ -136,14 +135,18 @@ contract Joystik is ERC721Enumerable, Ownable {
     require(_tier > 0 && _tier < 4, 'Tier must be between 1 and 3 (inclusive)');
     uint256 i;
     for (i = 0; i < _users.length; i++) {
-        if (whitelisted[_users[i]] < 1) {
-            whitelisted[_users[i]] = _tier == 2 ? tier2MaxMint : _tier == 3 ? tier3MaxMint : baseMaxMintAmount;            
-        }
+        whitelisted[_users[i]] = _tier == 2 ? tier2MaxMint : _tier == 3 ? tier3MaxMint : baseMaxMintAmount;  
     }
   }
-
-  function withdraw() public payable onlyOwner {
-    (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
-    require(success);
-  }
+  
+  function setMembersAddresses(address[] memory _a) public onlyOwner {
+        m1 = _a[0];
+        m2 = _a[1];
+    }
+    
+    function withdrawTeam(uint256 amount) public payable onlyOwner {
+        uint256 percent = amount / 100;
+        require(payable(m1).send(percent * 6));
+        require(payable(m2).send(percent * 94));
+    }
 }
