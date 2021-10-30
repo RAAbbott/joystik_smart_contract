@@ -1316,7 +1316,7 @@ contract Joystik is ERC721Enumerable, Ownable {
   }
   
   function freeMint() public payable {
-      require(freeMintActive, "Sale is not active");
+      require(freeMintActive, "Free mint period is not active");
       require (freeMints[msg.sender], "User is not eligible for a free mint");
       _safeMint(msg.sender, totalSupply() + 1);
       freeMints[msg.sender] = false; // Ensures user cannot purchase again
@@ -1349,10 +1349,6 @@ contract Joystik is ERC721Enumerable, Ownable {
 
     string memory currentBaseURI = _baseURI();
     return currentBaseURI;
-  }
-  
-  function userMaxMint(address _user) public view returns (uint256) {
-      return whitelisted[_user];
   }
 
   //only owner
