@@ -1312,7 +1312,7 @@ contract Joystik is ERC721Enumerable, Ownable {
             freeMints[msg.sender] = false;
         } else {
             if (raffleActive) require(raffle[msg.sender] == true, "User not eligible to mint currently");
-            require(_mintAmount <= publicMaxMint, "Selected mint amount is greater than max allowed");
+            require(_mintAmount <= publicMaxMint, "Selected mint amount is greater than max allowed");t
             require(balanceOf(msg.sender) + _mintAmount <= publicMaxMint, "User already has max number of NFTs allowed");
         }
         

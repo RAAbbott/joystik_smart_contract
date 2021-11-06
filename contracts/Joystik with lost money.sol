@@ -1278,11 +1278,11 @@ contract Joystik is ERC721Enumerable, Ownable {
   constructor(
     string memory _name,
     string memory _symbol,
-    string memory _initBaseURI,
-    address _payments
+    string memory _initBaseURI
+    // address _payments
   ) ERC721(_name, _symbol) {
     setBaseURI(_initBaseURI);
-    payments = payable(_payments);
+    // payments = payable(_payments);
   }
 
   // internal

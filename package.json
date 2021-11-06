@@ -2,5 +2,8 @@
   "name": "hardhat-project",
   "devDependencies": {
     "hardhat": "^2.6.7"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
   }
 }
